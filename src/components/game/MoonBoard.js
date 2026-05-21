@@ -55,8 +55,7 @@ export class MoonBoard extends HTMLElement {
 
         // Baterías
         let energyLeft = this.energy;
-        const maxEnergyStr = this.getAttribute('max-energy') || '4'; // Podría venir por atributo, o en AppController
-        const maxEnergy = parseInt(maxEnergyStr, 10);
+        const maxEnergy = Math.ceil(parseFloat(this.getAttribute('max-energy') || '4'));
 
         const batteries = [];
         for (let i = 0; i < maxEnergy; i++) {
@@ -279,7 +278,7 @@ export class MoonBoard extends HTMLElement {
         this.energy = energyValue;
 
         // Overlay blanco (color-white-selected) en slot 5 + cursor cuando se puede robar
-        const maxEnergy = parseInt(this.getAttribute('max-energy') || '4');
+        const maxEnergy = Math.ceil(parseFloat(this.getAttribute('max-energy') || '4'));
         const canSteal = energyValue < maxEnergy;
         const deckSlotEl = this.shadowRoot.querySelector('.deck-slot');
         if (deckSlotEl) deckSlotEl.classList.toggle('can-steal', canSteal);
