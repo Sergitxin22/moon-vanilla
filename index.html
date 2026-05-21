@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description"
+        content="Descubre Moon, un juego educativo de la Universidad de Deusto para aprender arquitectura de ordenadores. Gestiona tu energía, operaciones y registros.">
+    <link rel="icon" href="assets/icon.png" type="image/png">
+    <title>Moon V2 - Vanilla JS</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #001a2d;
+            overflow: hidden;
+            width: 100%;
+            height: 100vh;
+            touch-action: none;
+        }
+
+        #game-container {
+            width: 100dvw;
+            height: 100dvh;
+            /* background: url('assets/title.png') center center no-repeat; */
+            /* background-size: contain; */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <main id="game-container" aria-label="Juego Moon principal"></main>
+    <script type="module" src="src/main.js"></script>
+</body>
+
+</html>
