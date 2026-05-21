@@ -7,10 +7,11 @@ export class MoonCard extends HTMLElement {
         this.operation = 'INC';
         this.disabled = false;
         this.color = null;
+        this.error = null;
     }
 
     static get observedAttributes() {
-        return ['operation', 'disabled', 'selected', 'color'];
+        return ['operation', 'disabled', 'selected', 'color', 'error'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -18,6 +19,7 @@ export class MoonCard extends HTMLElement {
         if (name === 'disabled') this.disabled = newValue === 'true';
         if (name === 'selected') this.selected = newValue === 'true';
         if (name === 'color') this.color = newValue;
+        if (name === 'error') this.error = newValue || null;
         this.render();
     }
 
@@ -28,6 +30,10 @@ export class MoonCard extends HTMLElement {
 
     setupEvents() {
         this.shadowRoot.addEventListener('pointerdown', () => {
+            if (this.error) {
+                gameEvents.emit('OPERATION_ERROR_CLICKED', { operation: this.operation });
+                return;
+            }
             if (!this.disabled && this.operation !== 'OP') {
                 gameEvents.emit('OPERATION_CLICKED', this.operation);
             }
@@ -63,6 +69,9 @@ export class MoonCard extends HTMLElement {
                     :host([disabled="true"]) {
                         pointer-events: none;
                     }
+                    :host([disabled="true"][error]) {
+                        pointer-events: auto;
+                    }
                     .card {
                         display: block;
                         width: var(--sz, 110px);
@@ -85,12 +94,22 @@ export class MoonCard extends HTMLElement {
                     .highlight.visible {
                         opacity: 1;
                     }
+                    .error-overlay {
+                        position: absolute;
+                        top: 0; left: 0;
+                        width: 100%; height: 100%;
+                        object-fit: contain;
+                        z-index: 2;
+                        display: none;
+                        cursor: pointer;
+                    }
                     :host(:active) .card {
                         transform: translateY(2px) scale(0.95);
                     }
                 </style>
                 <img class="highlight" draggable="false" alt="highlight">
                 <img class="card" src="${imgSrc}" draggable="false" alt="${this.operation}" onerror="this.src='assets/texture/game/mat-op-slot.png'">
+                <img class="error-overlay" draggable="false" alt="error">
             `;
         }
 
@@ -110,6 +129,21 @@ export class MoonCard extends HTMLElement {
                 else highlightEl.classList.remove('selected-state');
             } else {
                 highlightEl.classList.remove('visible', 'selected-state');
+            }
+        }
+
+        // Actualizar error overlay
+        const errorEl = this.shadowRoot.querySelector('.error-overlay');
+        if (errorEl) {
+            if (this.error) {
+                const newSrc = `assets/texture/game/${this.error}.png`;
+                if (errorEl.getAttribute('data-src') !== newSrc) {
+                    errorEl.src = newSrc;
+                    errorEl.setAttribute('data-src', newSrc);
+                }
+                errorEl.style.display = 'block';
+            } else {
+                errorEl.style.display = 'none';
             }
         }
     }

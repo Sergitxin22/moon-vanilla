@@ -344,22 +344,31 @@ export class MoonBoard extends HTMLElement {
         if (model.state === 'ANIMATING') return;
         const hasSelectedOp = !!model.selectedOperation;
         const cards = this.shadowRoot.querySelectorAll('moon-card');
+        const ERROR_OP_TEXTURES = { ROL: 'evento-error_rol', XOR: 'evento-error_xor', NOT: 'evento-error_not' };
 
         cards.forEach(card => {
             const opType = card.getAttribute('operation');
             if (opType === 'OP') return;
 
-            // Bloqueadas vs Disponibles (por energía)
-            const isDisabled = model.disabledOperations && model.disabledOperations.has(opType);
+            const isErrorDisabled = model.disabledOperations && model.disabledOperations.has(opType);
             const cost = model.getEnergyCost ? model.getEnergyCost(opType) : 1;
-            const canAfford = !isDisabled && model.energy >= cost;
+            const isEnergyDisabled = !isErrorDisabled && model.energy < cost;
 
-            if (isDisabled || !canAfford) {
+            if (isErrorDisabled) {
                 card.setAttribute('disabled', 'true');
                 card.removeAttribute('selected');
                 card.removeAttribute('color');
+                const errorTex = ERROR_OP_TEXTURES[opType];
+                if (errorTex) card.setAttribute('error', errorTex);
+                else card.removeAttribute('error');
+            } else if (isEnergyDisabled) {
+                card.setAttribute('disabled', 'true');
+                card.removeAttribute('selected');
+                card.removeAttribute('color');
+                card.removeAttribute('error');
             } else {
                 card.removeAttribute('disabled');
+                card.removeAttribute('error');
                 if (hasSelectedOp) {
                     if (model.selectedOperation === opType) {
                         // Operación seleccionada: color propio + estado selected
@@ -381,14 +390,19 @@ export class MoonBoard extends HTMLElement {
 
     updateRegisterHighlights(model) {
         const regs = this.shadowRoot.querySelectorAll('moon-register');
+        const ERROR_REG_TEXTURES = { B: 'evento-error_bx', C: 'evento-error_cx', D: 'evento-error_dx' };
 
         // Bloqueos de eventos
         regs.forEach(reg => {
             const regName = reg.getAttribute('name');
             if (model.disabledRegisters && model.disabledRegisters.has(regName)) {
                 reg.setAttribute('disabled', 'true');
+                const errorTex = ERROR_REG_TEXTURES[regName];
+                if (errorTex) reg.setAttribute('error', errorTex);
+                else reg.removeAttribute('error');
             } else {
                 reg.removeAttribute('disabled');
+                reg.removeAttribute('error');
             }
         });
 
@@ -426,7 +440,7 @@ export class MoonBoard extends HTMLElement {
         panel.innerHTML = html;
     }
 
-    updateSlots(drawnCards) {
+    updateSlots(drawnCards, model) {
         let container = this.shadowRoot.querySelector('.slots-panel');
         if (!container || !drawnCards) return;
 
@@ -464,9 +478,29 @@ export class MoonBoard extends HTMLElement {
                     .dynamic-cards { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
                     .flowing-card {
                         position: absolute; left: 0;
-                        width: var(--sz); height: var(--sz); object-fit: contain;
+                        width: var(--sz); height: var(--sz);
                         transition: top 0.35s ease-in-out, opacity 0.35s ease-out, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                         z-index: 10;
+                    }
+                    .flowing-card > img {
+                        position: absolute;
+                        top: 0; left: 0;
+                        width: 100%; height: 100%;
+                        object-fit: contain;
+                        pointer-events: none;
+                    }
+                    .flowing-card > .card-bd {
+                        z-index: 0;
+                        opacity: 0;
+                    }
+                    .flowing-card.has-backdrop > .card-bd {
+                        opacity: 1;
+                    }
+                    .flowing-card > .card-img {
+                        z-index: 1;
+                    }
+                    .flowing-card.bug-ghost {
+                        pointer-events: auto;
                     }
                     .flowing-card.instant { transition: none !important; }
                     .deck-glow { animation: glow-breathe 1s infinite alternate; }
@@ -486,12 +520,43 @@ export class MoonBoard extends HTMLElement {
             container.querySelector('.deck-slot')?.addEventListener('pointerdown', () => {
                 gameEvents.emit('DECK_CLICKED');
             });
+
+            // Delegación de clicks en slots BUG bloqueados
+            container.querySelector('.dynamic-cards')?.addEventListener('pointerdown', (e) => {
+                const bugGhost = e.target.closest?.('.bug-ghost');
+                if (bugGhost) {
+                    const bugId = parseInt(bugGhost.getAttribute('data-bug-id'));
+                    gameEvents.emit('BUG_SLOT_CLICKED', { bugId });
+                }
+            });
         }
 
         const dynamicContainer = container.querySelector('.dynamic-cards');
         const deckSlot = container.querySelector('.deck-slot');
 
-        if (drawnCards.length === 0) {
+        // Mapa de texturas de eventos
+        const EVENT_TEXTURES = {
+            BUG: 'evento-bug',
+            ERROR_OP_ROL: 'evento-error_rol', ERROR_OP_XOR: 'evento-error_xor', ERROR_OP_NOT: 'evento-error_not',
+            ERROR_REG_B: 'evento-error_bx', ERROR_REG_C: 'evento-error_cx', ERROR_REG_D: 'evento-error_dx',
+            RESET_REG_A: 'evento-reset_ax', RESET_REG_B: 'evento-reset_bx', RESET_REG_C: 'evento-reset_cx', RESET_REG_D: 'evento-reset_dx',
+            RESET_BIT_1: 'evento-reset_value1', RESET_BIT_2: 'evento-reset_value2', RESET_BIT_3: 'evento-reset_value3',
+            OK: 'evento-ok',
+        };
+        const getEventBackdropColor = (eventType) => {
+            if (eventType === 'BUG') return 'yellow';
+            if (eventType === 'OK') return 'green';
+            if (eventType && eventType.startsWith('ERROR_')) return 'red';
+            if (eventType && eventType.startsWith('RESET_')) return 'white';
+            return null;
+        };
+
+        // Info de slots bloqueados y reparación pendiente
+        const numBlocked = model ? model.blockedSlots.size : 0;
+        const blockedIds = model ? [...model.blockedSlots] : [];
+        const hasPendingRepair = model ? !!model.pendingRepairCard : false;
+
+        if (drawnCards.length === 0 && numBlocked === 0) {
             dynamicContainer.innerHTML = '';
             deckSlot?.classList.add('deck-glow');
             return;
@@ -499,21 +564,11 @@ export class MoonBoard extends HTMLElement {
 
         deckSlot.classList.remove('deck-glow');
 
-        // Detectar si se robó una carta nueva del mazo (drawnCards[length-1] cambió)
-        const currentTopCard = drawnCards[drawnCards.length - 1];
-        const isNewTopCard = currentTopCard !== this._prevTopCard;
-        this._prevTopCard = currentTopCard;
-
-        // Detectar si la carta activa (drawnCards[0]) cambió: init o completó objetivo
-        const currentActiveCard = drawnCards[0] || null;
-        const isNewActiveCard = currentActiveCard !== this._prevActiveCard;
-        this._prevActiveCard = currentActiveCard;
-
-        // Helper: ruta de imagen de una carta
+        // Helper: ruta de imagen de una carta (cara visible)
         const getImgSrc = (card, isActive) => {
             if (!isActive) return 'assets/texture/game/back.png';
             if (card.kind === 'objective') return `assets/texture/game/objetivo-${card.value.toString(2).padStart(4, '0')}.png`;
-            if (card.kind === 'event') return `assets/texture/game/evento-bug.png`;
+            if (card.kind === 'event') return `assets/texture/game/${EVENT_TEXTURES[card.eventType] || 'evento-bug'}.png`;
             return '';
         };
 
@@ -521,10 +576,21 @@ export class MoonBoard extends HTMLElement {
         const flipToFace = (el, card) => {
             const faceSrc = getImgSrc(card, true);
             if (!faceSrc) return;
+            const cardImg = el.querySelector ? el.querySelector('.card-img') : null;
+            if (!cardImg) return;
             el.style.transition = 'transform 250ms linear';
             el.style.transform = 'scaleX(0)';
             setTimeout(() => {
-                el.src = faceSrc;
+                cardImg.src = faceSrc;
+                // Activar fondo de color para eventos
+                if (card.kind === 'event') {
+                    const color = getEventBackdropColor(card.eventType);
+                    if (color) {
+                        const bdImg = el.querySelector('.card-bd');
+                        if (bdImg) bdImg.src = `assets/texture/game/color-${color}-selected.png`;
+                        el.classList.add('has-backdrop');
+                    }
+                }
                 el.style.transform = 'scaleX(1)';
                 setTimeout(() => {
                     el.style.transition = '';
@@ -533,27 +599,54 @@ export class MoonBoard extends HTMLElement {
             }, 260);
         };
 
-        if (isNewTopCard) {
+        // Generar HTML de slots BUG bloqueados (encima de las cartas normales)
+        const bugGhostsHtml = blockedIds.map((bugId, j) => {
+            const top = `calc(${j + 1} * (var(--sz) + var(--gp)))`;
+            const cursor = hasPendingRepair ? 'cursor:pointer;' : 'cursor:default;';
+            return `<div class="flowing-card bug-ghost instant has-backdrop" data-bug-id="${bugId}" style="top:${top}; opacity:1; transform:scale(1); ${cursor}">
+                <img class="card-bd" src="assets/texture/game/color-yellow-selected.png" draggable="false">
+                <img class="card-img" src="assets/texture/game/evento-bug.png" draggable="false">
+            </div>`;
+        }).join('');
+
+        // Detectar si se robó una carta nueva del mazo (drawnCards[length-1] cambió)
+        const currentTopCard = drawnCards.length > 0 ? drawnCards[drawnCards.length - 1] : null;
+        const isNewTopCard = currentTopCard !== this._prevTopCard;
+        this._prevTopCard = currentTopCard;
+
+        // Detectar si la carta activa (drawnCards[0]) cambió: init o completó objetivo
+        const currentActiveCard = drawnCards[0] || null;
+        const isNewActiveCard = currentActiveCard !== this._prevActiveCard;
+        this._prevActiveCard = currentActiveCard;
+
+        if (isNewTopCard && drawnCards.length > 0) {
             // Animación simultánea: nueva carta desde el mazo, existentes bajan un slot
             const totalNew = drawnCards.length;
             const totalOld = totalNew - 1;
 
-            const initialHtml = drawnCards.map((card, i) => {
+            const initialHtml = bugGhostsHtml + drawnCards.map((card, i) => {
                 const isNewCard = (i === totalNew - 1);
                 const isActive = (i === 0);
+
                 if (isNewCard) {
-                    // Nueva carta: empieza en slot 5 (top:0), reverso oculto
-                    const imgSrc = getImgSrc(card, false);
-                    if (!imgSrc) return '';
-                    return `<img class="flowing-card instant" src="${imgSrc}" style="top:0; opacity:0; transform:scale(0);" data-target="1"${isActive ? ' data-active="true"' : ''} draggable="false">`;
+                    const imgSrc = getImgSrc(card, false); // reverso
+                    return `<div class="flowing-card instant" style="top:0; opacity:0; transform:scale(0);" data-target="${numBlocked + 1}"${isActive ? ' data-active="true"' : ''}>
+                        <img class="card-bd" src="" draggable="false">
+                        <img class="card-img" src="${imgSrc}" draggable="false">
+                    </div>`;
                 } else {
-                    // Carta existente: la más antigua (i===0) mostrará cara, resto reverso
                     const imgSrc = getImgSrc(card, isActive);
-                    if (!imgSrc) return '';
-                    const oldVisualIndex = totalOld - 1 - i;
-                    const newVisualIndex = totalNew - 1 - i;
+                    const oldVisualIndex = numBlocked + totalOld - 1 - i;
+                    const newVisualIndex = numBlocked + totalNew - 1 - i;
                     const oldTop = `calc(${oldVisualIndex + 1} * (var(--sz) + var(--gp)))`;
-                    return `<img class="flowing-card instant" src="${imgSrc}" style="top:${oldTop}; opacity:1; transform:scale(1);" data-target="${newVisualIndex + 1}"${isActive ? ' data-active="true"' : ''} draggable="false">`;
+                    const isEvent = isActive && card.kind === 'event';
+                    const backdropColor = isEvent ? getEventBackdropColor(card.eventType) : null;
+                    const bdSrc = backdropColor ? `assets/texture/game/color-${backdropColor}-selected.png` : '';
+                    const hasBackdropClass = backdropColor ? ' has-backdrop' : '';
+                    return `<div class="flowing-card instant${hasBackdropClass}" style="top:${oldTop}; opacity:1; transform:scale(1);" data-target="${newVisualIndex + 1}"${isActive ? ' data-active="true"' : ''}>
+                        <img class="card-bd" src="${bdSrc}" draggable="false">
+                        <img class="card-img" src="${imgSrc}" draggable="false">
+                    </div>`;
                 }
             }).join('');
 
@@ -562,6 +655,7 @@ export class MoonBoard extends HTMLElement {
 
             dynamicContainer.querySelectorAll('.flowing-card').forEach(el => {
                 const target = el.getAttribute('data-target');
+                if (!target) return; // BUG ghosts no tienen data-target
                 el.classList.remove('instant');
                 el.style.top = `calc(${target} * (var(--sz) + var(--gp)))`;
                 el.style.opacity = '1';
@@ -569,7 +663,6 @@ export class MoonBoard extends HTMLElement {
             });
 
             // Tras el deslizamiento: voltear la carta activa si es nueva (caso init)
-            // Usamos transitionend para esperar a que el transform del slide termine (500ms cubic-bezier)
             if (isNewActiveCard) {
                 const activeEl = dynamicContainer.querySelector('[data-active="true"]');
                 if (activeEl) {
@@ -592,15 +685,20 @@ export class MoonBoard extends HTMLElement {
         } else {
             // Sin nueva carta robada: actualizar posiciones instantáneamente
             // Si la carta activa cambió (objetivo completado → siguiente), mostrar reverso y voltear
-            const html = drawnCards.map((card, i) => {
+            const html = bugGhostsHtml + drawnCards.map((card, i) => {
                 const isActive = (i === 0);
-                const imgSrc = (isActive && isNewActiveCard)
-                    ? 'assets/texture/game/back.png'
-                    : getImgSrc(card, isActive);
-                if (!imgSrc) return '';
-                const visualIndex = drawnCards.length - 1 - i;
+                const visualIndex = numBlocked + drawnCards.length - 1 - i;
                 const top = `calc(${visualIndex + 1} * (var(--sz) + var(--gp)))`;
-                return `<img class="flowing-card instant" src="${imgSrc}" style="top:${top}; opacity:1; transform:scale(1);"${isActive ? ' data-active="true"' : ''} draggable="false">`;
+                const showBack = isActive && isNewActiveCard;
+                const imgSrc = showBack ? 'assets/texture/game/back.png' : getImgSrc(card, isActive);
+                const isEvent = !showBack && isActive && card.kind === 'event';
+                const backdropColor = isEvent ? getEventBackdropColor(card.eventType) : null;
+                const bdSrc = backdropColor ? `assets/texture/game/color-${backdropColor}-selected.png` : '';
+                const hasBackdropClass = backdropColor ? ' has-backdrop' : '';
+                return `<div class="flowing-card instant${hasBackdropClass}" style="top:${top}; opacity:1; transform:scale(1);"${isActive ? ' data-active="true"' : ''}>
+                    <img class="card-bd" src="${bdSrc}" draggable="false">
+                    <img class="card-img" src="${imgSrc}" draggable="false">
+                </div>`;
             }).join('');
             dynamicContainer.innerHTML = html;
 
@@ -613,6 +711,24 @@ export class MoonBoard extends HTMLElement {
                     setTimeout(() => flipToFace(activeEl, drawnCards[0]), 20);
                 }
             }
+        }
+    }
+    // Anima la carta activa hacia fuera (scale→0, opacity→0, 300ms) y llama callback al terminar.
+    // Equivale al tween de removeCompletedObjective en Phaser (alpha:0, scaleX:0, scaleY:0, duration:300).
+    animateObjectiveExit(callback) {
+        const dynamicContainer = this.shadowRoot.querySelector('.dynamic-cards');
+        const activeEl = dynamicContainer ? dynamicContainer.querySelector('[data-active="true"]') : null;
+        if (activeEl) {
+            activeEl.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+            activeEl.style.transform = 'scale(0)';
+            activeEl.style.opacity = '0';
+            setTimeout(() => {
+                // Eliminar el elemento del DOM antes de que updateSlots reconstruya el contenedor
+                activeEl.remove();
+                callback();
+            }, 300);
+        } else {
+            callback();
         }
     }
     // Anima los bits de un registro con la misma animación explodeIn del inicio (sin mostrar la carta de objetivo)

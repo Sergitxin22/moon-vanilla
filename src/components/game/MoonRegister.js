@@ -8,10 +8,11 @@ export class MoonRegister extends HTMLElement {
         this.name = 'A';
         this.value = 0;
         this.disabled = false;
+        this.error = null;
     }
 
     static get observedAttributes() {
-        return ['name', 'value', 'disabled', 'highlight-color', 'highlight-fill', 'startup-value', 'startup-phase', 'startup-delay'];
+        return ['name', 'value', 'disabled', 'highlight-color', 'highlight-fill', 'startup-value', 'startup-phase', 'startup-delay', 'error'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -23,6 +24,7 @@ export class MoonRegister extends HTMLElement {
         if (name === 'startup-value') this.startupValue = parseInt(newValue) || 0;
         if (name === 'startup-phase') this.startupPhase = newValue;
         if (name === 'startup-delay') this.startupDelay = parseInt(newValue) || 0;
+        if (name === 'error') this.error = newValue || null;
         this.render();
     }
 
@@ -33,6 +35,10 @@ export class MoonRegister extends HTMLElement {
 
     setupEvents() {
         this.shadowRoot.addEventListener('pointerdown', () => {
+            if (this.error) {
+                gameEvents.emit('REGISTER_ERROR_CLICKED', { register: this.name });
+                return;
+            }
             if (!this.disabled) {
                 gameEvents.emit('REGISTER_CLICKED', this.name);
             }
@@ -114,7 +120,16 @@ export class MoonRegister extends HTMLElement {
                     height: var(--sz, 110px);
                     cursor: pointer;
                     opacity: ${this.disabled ? '0.3' : '1'};
-                    pointer-events: ${this.disabled ? 'none' : 'auto'};
+                    pointer-events: ${(this.disabled && !this.error) ? 'none' : 'auto'};
+                }
+                .error-overlay {
+                    position: absolute;
+                    top: 0; left: 0;
+                    width: 100%; height: 100%;
+                    object-fit: contain;
+                    z-index: 6;
+                    cursor: pointer;
+                    pointer-events: auto;
                 }
                 .container {
                     display: flex;
@@ -192,6 +207,7 @@ export class MoonRegister extends HTMLElement {
                     ${fillHtml}
                     <img class="bg" src="assets/texture/game/mat-register-${regIndex}.png" draggable="false" alt="Registro ${this.name}">
                     ${borderHtml}
+                    ${this.error ? `<img class="error-overlay" src="assets/texture/game/${this.error}.png" draggable="false" alt="error">` : ''}
                 </div>
                 <div class="bits">${bitsHtml}</div>
             </div>

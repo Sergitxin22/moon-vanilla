@@ -31,6 +31,7 @@ export class GameModel {
 
         this.selectedOperation = null;
         this.selectedRegisters = [];
+        this._bugIdCounter = 0;
 
         this.initGame();
     }
@@ -67,17 +68,12 @@ export class GameModel {
         if (valA === this.currentObjective.value) {
             console.log(`¡OBJETIVO COMPLETADO! Valor: ${valA}`);
 
-            // Eliminar de las dibujadas
-            const idx = this.drawnCards.findIndex(c => c === this.currentObjective);
-            if (idx !== -1) {
-                this.drawnCards.splice(idx, 1);
-            }
+            // Bloquear interacciones durante la animación de salida (300ms, como canInteract=false en Phaser)
+            this.setState(GameState.ANIMATING);
 
-            this.currentObjective = null;
-            this.setState(GameState.COMPLETED_OBJECTIVE);
-
-            // Cargar el siguiente o notificar fin del juego
-            this.setNextObjective();
+            // Emitir evento: la carta animará su salida en el board; la eliminación real
+            // y setNextObjective ocurren en AppController tras la animación (como removeCompletedObjective en Phaser)
+            gameEvents.emit('OBJECTIVE_COMPLETED', this.currentObjective);
         }
     }
 
@@ -99,10 +95,7 @@ export class GameModel {
         this.drawnCards.push(newCard);
         gameEvents.emit('SLOTS_UPDATED', this.drawnCards);
 
-        if (newCard.kind === 'event') {
-            this.resolveEvent(newCard);
-        }
-
+        // Los eventos robados van face-down; se resuelven solo cuando se destapen (drawnCards[0])
         this.checkGameEndConditions();
         return true;
     }
@@ -113,7 +106,7 @@ export class GameModel {
 
     consumeTopEventCard() {
         if (this.drawnCards.length === 0) return;
-        this.drawnCards.pop();
+        this.drawnCards.shift();
         this.pendingRepairCard = null;
         gameEvents.emit('SLOTS_UPDATED', this.drawnCards);
         gameEvents.emit('DISABLED_UPDATED', {
@@ -165,6 +158,11 @@ export class GameModel {
             return;
         }
 
+        // Eliminar cartas vacías del frente (generadas cuando el mazo se agotó con stealCard)
+        while (this.drawnCards.length > 0 && this.drawnCards[0].kind === 'empty') {
+            this.drawnCards.shift();
+        }
+
         if (this.drawnCards.length === 0) {
             if (this.deck.length === 0) {
                 console.log('¡No hay más objetivos! ¡Has ganado!');
@@ -189,12 +187,12 @@ export class GameModel {
                 }
             }
         } else {
-            // El usuario aún tiene cartas arrastradas
-            const topCard = this.drawnCards[this.drawnCards.length - 1];
-            if (topCard.kind === 'objective') {
-                this.currentObjective = topCard;
+            // La carta activa es siempre drawnCards[0] (la más antigua, face-up)
+            const activeCard = this.drawnCards[0];
+            if (activeCard.kind === 'objective') {
+                this.currentObjective = activeCard;
             } else {
-                this.resolveEvent(topCard);
+                this.resolveEvent(activeCard);
             }
         }
 
@@ -219,8 +217,9 @@ export class GameModel {
         setTimeout(() => {
             switch (card.eventType) {
                 case EVENT_TYPES.BUG: {
-                    const topIndex = this.drawnCards.length - 1;
-                    if (topIndex >= 0) this.blockedSlots.add(topIndex);
+                    // Bloqueamos un slot usando un ID numérico único (el índice cambia tras el shift)
+                    const bugId = ++this._bugIdCounter;
+                    this.blockedSlots.add(bugId);
                     this.consumeTopEventCard();
                     break;
                 }

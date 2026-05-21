@@ -32,7 +32,7 @@ export class AppController {
         // Reset visual inicial (todos registros a 0, sin carta objetivo, sin highlights)
         this.board.updateRegisters({ A: 0, B: 0, C: 0, D: 0 });
         this.board.updateEnergy(this.model.energy);
-        this.board.updateSlots([]);
+        this.board.updateSlots([], this.model);
 
         // Pequeña pausa dramática antes de empezar
         await new Promise(resolve => setTimeout(resolve, 400));
@@ -44,7 +44,7 @@ export class AppController {
         }
 
         // Aparece la carta objetivo en slot 4
-        this.board.updateSlots(this.model.drawnCards);
+        this.board.updateSlots(this.model.drawnCards, this.model);
         await new Promise(resolve => setTimeout(resolve, 700));
 
         // Fade-in de los highlights de operaciones disponibles
@@ -54,6 +54,10 @@ export class AppController {
         // Pequeña espera para que termine el fade-in antes de habilitar interacción
         await new Promise(resolve => setTimeout(resolve, 550));
         this.syncBoard();
+
+        // Activar el primer objetivo o resolver el primer evento
+        // (equivalente a animateOperationHighlights → setNextObjective en Phaser)
+        this.model.setNextObjective();
     }
 
     setupEventListeners() {
@@ -70,7 +74,7 @@ export class AppController {
             this.logState();
         };
         this.onSlotsUpdated = (cards) => {
-            this.board.updateSlots(cards);
+            this.board.updateSlots(cards, this.model);
         };
         this.onDisabledUpdated = () => {
             this.board.updateOperationHighlights(this.model);
@@ -90,6 +94,35 @@ export class AppController {
                 this.board.updateOperationHighlights(this.model);
             }
         };
+        this.onOperationErrorClicked = ({ operation }) => {
+            this.model.repairError('operation', operation);
+        };
+        this.onRegisterErrorClicked = ({ register }) => {
+            this.model.repairError('register', register);
+        };
+        this.onBugSlotClicked = ({ bugId }) => {
+            this.model.repairError('bug', bugId);
+        };
+        this.onPendingRepair = () => {
+            this.board.updateSlots(this.model.drawnCards, this.model);
+        };
+        this.onObjectiveCompleted = (completedObjective) => {
+            // Animar salida de la carta completada (300ms, como removeCompletedObjective en Phaser)
+            this.board.animateObjectiveExit(() => {
+                // Tras la animación: eliminar la carta del array y avanzar al siguiente objetivo
+                const idx = this.model.drawnCards.findIndex(c => c === completedObjective);
+                if (idx !== -1) this.model.drawnCards.splice(idx, 1);
+                this.model.currentObjective = null;
+                this.model.setState('COMPLETED_OBJECTIVE');
+                this.model.setNextObjective();
+                // Si el juego terminó (GAME_OVER), no actualizar el board
+                if (this.model.state === 'GAME_OVER') return;
+                // Si el siguiente era un evento (no se emitió NEW_OBJECTIVE), forzar actualización de slots
+                if (!this.model.currentObjective) {
+                    this.board.updateSlots(this.model.drawnCards, this.model);
+                }
+            });
+        };
 
         gameEvents.on('OPERATION_CLICKED', this.onOperationClicked);
         gameEvents.on('REGISTER_CLICKED', this.onRegisterClicked);
@@ -100,6 +133,11 @@ export class AppController {
         gameEvents.on('DISABLED_UPDATED', this.onDisabledUpdated);
         gameEvents.on('GAME_OVER', this.onGameOver);
         gameEvents.on('DECK_CLICKED', this.onDeckClicked);
+        gameEvents.on('OPERATION_ERROR_CLICKED', this.onOperationErrorClicked);
+        gameEvents.on('REGISTER_ERROR_CLICKED', this.onRegisterErrorClicked);
+        gameEvents.on('BUG_SLOT_CLICKED', this.onBugSlotClicked);
+        gameEvents.on('PENDING_REPAIR', this.onPendingRepair);
+        gameEvents.on('OBJECTIVE_COMPLETED', this.onObjectiveCompleted);
     }
 
     destroy() {
@@ -113,6 +151,11 @@ export class AppController {
         gameEvents.off('DISABLED_UPDATED', this.onDisabledUpdated);
         gameEvents.off('GAME_OVER', this.onGameOver);
         gameEvents.off('DECK_CLICKED', this.onDeckClicked);
+        gameEvents.off('OPERATION_ERROR_CLICKED', this.onOperationErrorClicked);
+        gameEvents.off('REGISTER_ERROR_CLICKED', this.onRegisterErrorClicked);
+        gameEvents.off('BUG_SLOT_CLICKED', this.onBugSlotClicked);
+        gameEvents.off('PENDING_REPAIR', this.onPendingRepair);
+        gameEvents.off('OBJECTIVE_COMPLETED', this.onObjectiveCompleted);
     }
 
     syncBoard() {
@@ -145,7 +188,7 @@ export class AppController {
     renderObjective(objective) {
         if (!objective) return;
         console.log(`[Controller] Activar Objetivo Físico: Valor a conseguir: ${objective.value}`);
-        this.board.updateSlots(this.model.drawnCards);
+        this.board.updateSlots(this.model.drawnCards, this.model);
     }
 
     handleOperationSelected(opName) {

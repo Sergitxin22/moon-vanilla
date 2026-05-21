@@ -143,6 +143,8 @@ export class SceneCustom extends HTMLElement {
                     display: flex;
                     width: 100%;
                     height: 100%;
+                    padding: 0 min(3.5vw, 5vh);
+                    box-sizing: border-box;
                 }
                 /* ── Columna de tabs ── */
                 .tabs {
@@ -151,12 +153,12 @@ export class SceneCustom extends HTMLElement {
                     align-items: center;
                     justify-content: center;
                     gap: var(--gp);
-                    width: calc(var(--sz) * 1.5);
+                    width: calc(var(--sz) * 1.85);
                     flex-shrink: 0;
                 }
                 .tab-btn {
-                    width: var(--sz);
-                    height: var(--sz);
+                    width: calc(var(--sz) * 1.3);
+                    height: calc(var(--sz) * 1.3);
                     cursor: pointer;
                     display: block;
                     object-fit: contain;
@@ -243,7 +245,9 @@ export class SceneCustom extends HTMLElement {
                     height: var(--sz);
                     cursor: pointer;
                 }
-                .grid-cell:hover .card-img { transform: scale(1.07); }
+                .grid-cell:hover .card-bg,
+                .grid-cell:hover .card-img,
+                .grid-cell:hover .card-overlay { transform: scale(1.07); }
                 .card-bg {
                     position: absolute;
                     inset: 0;
@@ -252,6 +256,7 @@ export class SceneCustom extends HTMLElement {
                     object-fit: contain;
                     display: block;
                     z-index: 0;
+                    transition: transform 0.1s;
                     -webkit-user-drag: none;
                 }
                 .card-img {
@@ -261,7 +266,7 @@ export class SceneCustom extends HTMLElement {
                     height: 100%;
                     object-fit: contain;
                     display: block;
-                    z-index: 1;
+                    z-index: 2;
                     transition: transform 0.1s;
                     -webkit-user-drag: none;
                 }
@@ -271,9 +276,9 @@ export class SceneCustom extends HTMLElement {
                     width: 100%;
                     height: 100%;
                     object-fit: contain;
-                    z-index: 2;
+                    z-index: 1;
                     opacity: 0;
-                    transition: opacity 0.18s ease;
+                    transition: opacity 0.18s ease, transform 0.1s;
                     pointer-events: none;
                     -webkit-user-drag: none;
                 }
@@ -316,8 +321,8 @@ export class SceneCustom extends HTMLElement {
                     gap: var(--gp);
                 }
                 .nav-btn {
-                    width: var(--sz);
-                    height: var(--sz);
+                    width: calc(var(--sz) * 1.35);
+                    height: calc(var(--sz) * 1.35);
                     cursor: pointer;
                     display: block;
                     object-fit: contain;
