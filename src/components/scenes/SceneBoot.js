@@ -43,23 +43,20 @@ export class SceneBoot extends HTMLElement {
     }
 
     loadAssets() {
-        // Simular carga de recursos. Aquí en Vanilla cargaremos imágenes si es necesario precargarlas.
-        // Al usar DOM, el navegador ya hace la carga sobre la marcha con img,
-        // pero podemos precargar texturas si queremos.
-        let progress = 0;
-        const fill = this.shadowRoot.getElementById('fill');
-
-        const interval = setInterval(() => {
-            progress += 10;
-            if (fill) fill.style.width = `${progress}%`;
-
-            if (progress >= 100) {
-                clearInterval(interval);
-                setTimeout(() => {
-                    this.router.navigate('menu');
-                }, 500);
-            }
-        }, 50);
+        // Precargar la imagen de fondo y navegar solo cuando esté lista
+        const bgUrl = 'assets/texture/menu_main/menu_main_background.png';
+        const img = new window.Image();
+        img.src = bgUrl;
+        img.onload = () => {
+            // Cuando la imagen esté cargada, navegar al menú
+            this.router.navigate('menu');
+        };
+        img.onerror = () => {
+            // Si falla la carga, navegar igual tras breve retardo
+            setTimeout(() => {
+                this.router.navigate('menu');
+            }, 500);
+        };
     }
 }
 
