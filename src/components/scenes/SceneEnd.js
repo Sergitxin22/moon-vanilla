@@ -28,6 +28,8 @@ export class SceneEnd extends HTMLElement {
             <style>
                 :host {
                     --sz: min(9vw, 14vh);
+                    
+                    --sz: min(9dvw, 14dvh);
                     display: block;
                     width: 100%;
                     height: 100%;
@@ -45,6 +47,9 @@ export class SceneEnd extends HTMLElement {
                 .result-img {
                     max-width: 60vw;
                     max-height: 60vh;
+
+                    max-width: 60dvw;
+                    max-height: 60dvh;
                     object-fit: contain;
                 }
                 .menu-btn {

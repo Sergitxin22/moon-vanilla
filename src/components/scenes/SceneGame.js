@@ -41,6 +41,9 @@ export class SceneGame extends HTMLElement {
                     display: block;
                     width: 100vw;
                     height: 100vh;
+
+                    width: 100dvw;
+                    height: 100dvh;
                     background: #000;
                     position: relative;
                     overflow: hidden; /* Evitar que el tapete genere scroll */

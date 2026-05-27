@@ -173,6 +173,8 @@ export class SceneCustom extends HTMLElement {
                     width: 100%;
                     height: 100%;
                     padding: 0 min(3.5vw, 5vh);
+
+                    padding: 0 min(3.5dvw, 5dvh);
                     box-sizing: border-box;
                 }
                 /* ── Columna de tabs ── */
@@ -183,11 +185,18 @@ export class SceneCustom extends HTMLElement {
                     justify-content: center;
                     gap: min(1.2vw, 1.8vh);
                     width: calc(min(9.375vw, 16.667vh) * 1.85);
+
+                    gap: min(1.2dvw, 1.8dvh);
+                    width: calc(min(9.375dvw, 16.667dvh) * 1.85);
+
                     flex-shrink: 0;
                 }
                 .tab-btn {
                     width: calc(min(9.375vw, 16.667vh) * 1.3);
                     height: calc(min(9.375vw, 16.667vh) * 1.3);
+
+                    width: calc(min(9.375dvw, 16.667dvh) * 1.3);
+                    height: calc(min(9.375dvw, 16.667dvh) * 1.3);
                     max-width: 100%;
                     max-height: 100%;
                     cursor: pointer;
@@ -206,11 +215,15 @@ export class SceneCustom extends HTMLElement {
                     align-items: center;
                     justify-content: center;
                     gap: min(1.2vw, 1.8vh);
+
+                    gap: min(1.2dvw, 1.8dvh);
                     flex-shrink: 0;
                 }
 
                 .moon-title {
                     width: calc(min(9.375vw, 16.667vh) * 1.85);
+
+                    width: calc(min(9.375dvw, 16.667dvh) * 1.85);
                     height: auto;
                     object-fit: contain;
                     display: block;
@@ -234,6 +247,8 @@ export class SceneCustom extends HTMLElement {
                     align-items: center;
                     justify-content: center;
                     gap: calc(min(9.375vw, 16.667vh) * 0.45);
+
+                    gap: calc(min(9.375dvw, 16.667dvh) * 0.45);
                     width: 100%;
                 }
                 .page.active { display: flex; }
@@ -243,10 +258,15 @@ export class SceneCustom extends HTMLElement {
                     display: flex;
                     align-items: center;
                     gap: min(1.2vw, 1.8vh);
+
+                    gap: min(1.2dvw, 1.8dvh);
                 }
                 .ctrl-icon {
                     width: min(9.375vw, 16.667vh);
                     height: min(9.375vw, 16.667vh);
+                    
+                    width: min(9.375dvw, 16.667dvh);
+                    height: min(9.375dvw, 16.667dvh);
                     max-width: 100%;
                     max-height: 100%;
                     object-fit: fill;
@@ -257,6 +277,9 @@ export class SceneCustom extends HTMLElement {
                 .ctrl-btn {
                     width: min(9.375vw, 16.667vh);
                     height: min(9.375vw, 16.667vh);
+
+                    width: min(9.375dvw, 16.667dvh);
+                    height: min(9.375dvw, 16.667dvh);
                     max-width: 100%;
                     max-height: 100%;
                     object-fit: fill;
@@ -274,6 +297,9 @@ export class SceneCustom extends HTMLElement {
                     position: relative;
                     width: min(9.375vw, 16.667vh);
                     height: min(9.375vw, 16.667vh);
+                    
+                    width: min(9.375dvw, 16.667dvh);
+                    height: min(9.375dvw, 16.667dvh);
                     flex-shrink: 0;
                 }
                 .reg-wrap > img {
@@ -295,11 +321,17 @@ export class SceneCustom extends HTMLElement {
                     display: grid;
                     grid-template-columns: repeat(7, min(9.375vw, 16.667vh));
                     gap: min(1.2vw, 1.8vh);
+
+                    grid-template-columns: repeat(7, min(9.375dvw, 16.667dvh));
+                    gap: min(1.2dvw, 1.8dvh);
                 }
                 .grid-cell {
                     position: relative;
                     width: min(9.375vw, 16.667vh);
                     height: min(9.375vw, 16.667vh);
+                    
+                    width: min(9.375dvw, 16.667dvh);
+                    height: min(9.375dvw, 16.667dvh);
                     cursor: pointer;
                     overflow: hidden;
                     transition: transform 0.1s;
@@ -342,6 +374,9 @@ export class SceneCustom extends HTMLElement {
                     display: block;
                     width: min(9.375vw, 16.667vh);
                     height: min(9.375vw, 16.667vh);
+
+                    width: min(9.375dvw, 16.667dvh);
+                    height: min(9.375dvw, 16.667dvh);
                     object-fit: fill;
                     flex-shrink: 0;
                     -webkit-user-drag: none;
@@ -353,15 +388,22 @@ export class SceneCustom extends HTMLElement {
                     flex-direction: column;
                     align-items: flex-start;
                     gap: min(1.2vw, 1.8vh);
+
+                    gap: min(1.2dvw, 1.8dvh);
                 }
                 .ops-order-row {
                     display: flex;
                     align-items: center;
                     gap: min(1.2vw, 1.8vh);
+
+                    gap: min(1.2dvw, 1.8dvh);
                 }
                 .ops-order-item {
                     width: min(9.375vw, 16.667vh);
                     height: min(9.375vw, 16.667vh);
+                    
+                    width: min(9.375dvw, 16.667dvh);
+                    height: min(9.375dvw, 16.667dvh);
                     cursor: pointer;
                     display: block;
                     object-fit: contain;
@@ -377,12 +419,20 @@ export class SceneCustom extends HTMLElement {
                     position: absolute;
                     bottom: min(2.5vw, 3.8vh);
                     right: min(2.5vw, 3.8vh);
+
+                    bottom: min(2.5dvw, 3.8dvh);
+                    right: min(2.5dvw, 3.8dvh);
                     display: flex;
                     gap: min(1.2vw, 1.8vh);
+
+                    gap: min(1.2dvw, 1.8dvh);
                 }
                 .nav-btn {
                     width: calc(min(9.375vw, 16.667vh) * 1.35);
                     height: calc(min(9.375vw, 16.667vh) * 1.35);
+
+                    width: calc(min(9.375dvw, 16.667dvh) * 1.35);
+                    height: calc(min(9.375dvw, 16.667dvh) * 1.35);
                     max-width: 100%;
                     max-height: 100%;
                     cursor: pointer;

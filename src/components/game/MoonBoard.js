@@ -82,6 +82,9 @@ export class MoonBoard extends HTMLElement {
                     /* Variables maestras de escalado responsive */
                     --sz: min(9vw, 14vh);
                     --gp: min(1.2vw, 1.8vh);
+
+                    --sz: min(9dvw, 14dvh);
+                    --gp: min(1.2dvw, 1.8dvh);
                     
                     display: flex;
                     justify-content: center;
@@ -99,6 +102,8 @@ export class MoonBoard extends HTMLElement {
                     align-items: flex-end; /* Alinea los 3 por la parte inferior */
                     width: 100%;
                     padding: 0 min(4vw, 50px); /* Margen responsivo para monitores grandes y pequeños */
+
+                    padding: 0 min(4dvw, 50px); /* Margen responsivo para monitores grandes y pequeños */
                     box-sizing: border-box;
                 }
 

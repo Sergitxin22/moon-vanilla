@@ -32,16 +32,24 @@ export class SceneMenu extends HTMLElement {
                     width: 100%;
                     height: 100%;
                     padding-top: min(6.25vw, 11.11vh);
+
+                    padding-top: min(6.25dvw, 11.11dvh);
                 }
                 .row {
                     display: flex;
                     justify-content: center;
                     gap: min(6.25vw, 11.11vh);
                     margin-bottom: min(1.5625vw, 2.78vh);
+
+                    gap: min(6.25dvw, 11.11dvh);
+                    margin-bottom: min(1.5625dvw, 2.78dvh);
                 }
                 .btn {
                     width: min(15.625vw, 27.78vh);
                     height: min(15.625vw, 27.78vh);
+
+                    width: min(15.625dvw, 27.78dvh);
+                    height: min(15.625dvw, 27.78dvh);
                     cursor: pointer;
                     transition: transform 0.1s;
                     touch-action: manipulation;
