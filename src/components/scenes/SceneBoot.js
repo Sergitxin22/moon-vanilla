@@ -34,10 +34,7 @@ export class SceneBoot extends HTMLElement {
                     font-family: monospace;
                 }
             </style>
-            <div>
-                <!-- Omitimos de momento la barra temporal y dejamos que cargue limpio hacia el menú -->
-            </div>
-            <div class="loader">Loading Moon...</div>
+            <!-- <div class="loader">Loading Moon...</div> -->
         `;
     }
 
