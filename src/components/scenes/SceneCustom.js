@@ -423,16 +423,16 @@ export class SceneCustom extends HTMLElement {
                     bottom: min(2.5dvw, 3.8dvh);
                     right: min(2.5dvw, 3.8dvh);
                     display: flex;
-                    gap: min(1.2vw, 1.8vh);
+                    gap: min(0.8vw, 1.2vh);
 
-                    gap: min(1.2dvw, 1.8dvh);
+                    gap: min(0.8dvw, 1.2dvh);
                 }
                 .nav-btn {
-                    width: calc(min(9.375vw, 16.667vh) * 1.35);
-                    height: calc(min(9.375vw, 16.667vh) * 1.35);
+                    width: calc(min(9.375vw, 16.667vh) * 1.1);
+                    height: calc(min(9.375vw, 16.667vh) * 1.1);
 
-                    width: calc(min(9.375dvw, 16.667dvh) * 1.35);
-                    height: calc(min(9.375dvw, 16.667dvh) * 1.35);
+                    width: calc(min(9.375dvw, 16.667dvh) * 1.1);
+                    height: calc(min(9.375dvw, 16.667dvh) * 1.1);
                     max-width: 100%;
                     max-height: 100%;
                     cursor: pointer;
@@ -565,11 +565,20 @@ export class SceneCustom extends HTMLElement {
         sr.querySelectorAll('[data-op]').forEach(cell => {
             cell.addEventListener('pointerdown', () => {
                 const op = cell.dataset.op;
+
                 if (this.selectedOps.has(op)) {
-                    if (this.selectedOps.size > 1) this.selectedOps.delete(op);
+                    // siempre puedes deseleccionar
+                    if (this.selectedOps.size > 1) {
+                        this.selectedOps.delete(op);
+                    }
                 } else {
+                    // SOLO permitir hasta 10
+                    if (this.selectedOps.size >= 10) {
+                        return; // bloquea selección extra
+                    }
                     this.selectedOps.add(op);
                 }
+
                 const overlay = cell.querySelector('.card-overlay');
                 if (overlay) overlay.classList.toggle('visible', this.selectedOps.has(op));
             });
