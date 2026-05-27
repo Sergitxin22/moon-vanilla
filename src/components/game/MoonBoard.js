@@ -114,6 +114,20 @@ export class MoonBoard extends HTMLElement {
                     width: var(--sz);
                     height: var(--sz);
                 }
+                
+                .operations-wrapper {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: var(--gp);
+                }
+
+                .operations-title {
+                    width: calc(var(--sz) * 2 + var(--gp));
+                    height: auto;
+                    object-fit: contain;
+                    display: block;
+                }
 
                 /* Panel derecho (Slots) */
                 .slots-panel {
@@ -169,8 +183,17 @@ export class MoonBoard extends HTMLElement {
             </style>
             
             <div class="board-wrapper">
-                <div class="operations-panel">
-                    ${cardsHtml}
+                <div class="operations-wrapper">
+                    <img
+                        src="assets/texture/game/moon-title.png"
+                        class="operations-title"
+                        alt="Moon Title"
+                        draggable="false"
+                    >
+
+                    <div class="operations-panel">
+                        ${cardsHtml}
+                    </div>
                 </div>
 
                 <div class="center-panel">

@@ -164,7 +164,7 @@ export class SceneCustom extends HTMLElement {
                     display: block;
                     width: 100%;
                     height: 100%;
-                    background: url('assets/texture/menu_setup/menu_setup_background.png') center/100% 100% no-repeat;
+                    background: url('assets/texture/game/mat-empty.png') center/100% 100% no-repeat;
                     position: relative;
                     overflow: hidden;
                 }
@@ -199,6 +199,23 @@ export class SceneCustom extends HTMLElement {
                     -webkit-user-drag: none;
                 }
                 .tab-btn:hover { transform: scale(1.07); }
+
+                .tabs-wrapper {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: min(1.2vw, 1.8vh);
+                    flex-shrink: 0;
+                }
+
+                .moon-title {
+                    width: calc(min(9.375vw, 16.667vh) * 1.85);
+                    height: auto;
+                    object-fit: contain;
+                    display: block;
+                    -webkit-user-drag: none;
+                }
 
                 /* ── Área de contenido ── */
                 .content {
@@ -383,11 +400,22 @@ export class SceneCustom extends HTMLElement {
             </style>
 
             <div class="layout">
+
                 <!-- Columna de tabs -->
-                <div class="tabs">
-                    <img class="tab-btn" id="tab-misc"   src="assets/texture/menu_setup/tab_misc_selected.png"   data-tab="MISC"   draggable="false">
-                    <img class="tab-btn" id="tab-events" src="assets/texture/menu_setup/tab_events.png"           data-tab="EVENTS" draggable="false">
-                    <img class="tab-btn" id="tab-ops"    src="assets/texture/menu_setup/tab_ops.png"              data-tab="OPS"    draggable="false">
+                <div class="tabs-wrapper">
+                    <img
+                        class="moon-title"
+                        src="assets/texture/game/setup-title.png"
+                        alt="Moon Title"
+                        draggable="false"
+                    >
+
+                    <div class="tabs">
+                        <img class="tab-btn" id="tab-misc"   src="assets/texture/menu_setup/tab_misc_selected.png"   data-tab="MISC"   draggable="false">
+                        <img class="tab-btn" id="tab-events" src="assets/texture/menu_setup/tab_events.png"           data-tab="EVENTS" draggable="false">
+                        <img class="tab-btn" id="tab-ops"    src="assets/texture/menu_setup/tab_ops.png"              data-tab="OPS"    draggable="false">
+                    </div>
+
                 </div>
 
                 <!-- Área de contenido -->
