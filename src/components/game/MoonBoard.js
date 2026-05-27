@@ -481,10 +481,19 @@ export class MoonBoard extends HTMLElement {
             container.innerHTML = `
                 <style>
                     .slots-panel { position: relative; }
-                    /* fixed-slots necesita position:relative para el overlay absoluto */
-                    .fixed-slots { position: relative; }
-                    .slot-bg { display: block; width: var(--sz); height: var(--sz); object-fit: contain; margin-bottom: var(--gp); }
-                    .slot-bg:last-child { margin-bottom: 0; }
+                    .fixed-slots {
+                        position: relative;
+                        display: flex;
+                        flex-direction: column;
+                        gap: var(--gp); /* mismo sistema que center-panel */
+                    }
+
+                    .slot-bg {
+                        display: block;
+                        width: var(--sz);
+                        height: var(--sz);
+                        object-fit: contain;
+                    }
                     /* Cursor pointer solo cuando se puede robar */
                     .deck-slot.can-steal { cursor: pointer; }
                     /* Overlay con la textura original 'color-white-selected' sobre el slot 5 */
@@ -530,11 +539,6 @@ export class MoonBoard extends HTMLElement {
                         pointer-events: auto;
                     }
                     .flowing-card.instant { transition: none !important; }
-                    .deck-glow { animation: glow-breathe 1s infinite alternate; }
-                    @keyframes glow-breathe {
-                        from { filter: drop-shadow(0 0 5px rgba(255,255,255,0.2)); }
-                        to   { filter: drop-shadow(0 0 15px rgba(255,255,255,0.8)); transform: scale(1.02); }
-                    }
                 </style>
                 <div class="fixed-slots">
                     ${fixedHtml}
@@ -585,11 +589,8 @@ export class MoonBoard extends HTMLElement {
 
         if (drawnCards.length === 0 && numBlocked === 0) {
             dynamicContainer.innerHTML = '';
-            deckSlot?.classList.add('deck-glow');
             return;
         }
-
-        deckSlot.classList.remove('deck-glow');
 
         // Helper: ruta de imagen de una carta (cara visible)
         const getImgSrc = (card, isActive) => {
@@ -603,27 +604,58 @@ export class MoonBoard extends HTMLElement {
         const flipToFace = (el, card) => {
             const faceSrc = getImgSrc(card, true);
             if (!faceSrc) return;
-            const cardImg = el.querySelector ? el.querySelector('.card-img') : null;
+
+            const cardImg = el.querySelector('.card-img');
             if (!cardImg) return;
-            el.style.transition = 'transform 250ms linear';
-            el.style.transform = 'scaleX(0)';
-            setTimeout(() => {
-                cardImg.src = faceSrc;
-                // Activar fondo de color para eventos
-                if (card.kind === 'event') {
-                    const color = getEventBackdropColor(card.eventType);
-                    if (color) {
-                        const bdImg = el.querySelector('.card-bd');
-                        if (bdImg) bdImg.src = `assets/texture/game/color-${color}-selected.png`;
-                        el.classList.add('has-backdrop');
+
+            const bdImg = el.querySelector('.card-bd');
+
+            const duration = 300;
+
+            // evitar rendering raro en scaleX(0)
+            el.style.backfaceVisibility = 'hidden';
+            el.style.transformStyle = 'preserve-3d';
+
+            el.style.transition = `transform ${duration}ms linear`;
+
+            let phase = 0;
+
+            const step = (e) => {
+                if (e.propertyName !== 'transform') return;
+
+                if (phase === 0) {
+                    phase = 1;
+
+                    // CAMBIO DE TEXTURA ANTES de reabrir
+                    cardImg.src = faceSrc;
+
+                    if (card.kind === 'event') {
+                        const color = getEventBackdropColor(card.eventType);
+                        if (color && bdImg) {
+                            bdImg.src = `assets/texture/game/color-${color}-selected.png`;
+                            el.classList.add('has-backdrop');
+                        }
                     }
-                }
-                el.style.transform = 'scaleX(1)';
-                setTimeout(() => {
+
+                    // forzar repaint antes de abrir
+                    requestAnimationFrame(() => {
+                        el.style.transform = 'scaleX(1)';
+                    });
+
+                } else {
+                    el.removeEventListener('transitionend', step);
+
                     el.style.transition = '';
                     el.style.transform = 'scale(1)';
-                }, 260);
-            }, 260);
+                }
+            };
+
+            el.addEventListener('transitionend', step);
+
+            // start flip
+            requestAnimationFrame(() => {
+                el.style.transform = 'scaleX(0)';
+            });
         };
 
         // Generar HTML de slots BUG bloqueados (encima de las cartas normales)
