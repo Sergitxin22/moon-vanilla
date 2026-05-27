@@ -87,8 +87,8 @@ export class MoonRegister extends HTMLElement {
             }
             return `
             <div class="bit-container">
-                <img class="bit" src="assets/texture/game/bit0.png" draggable="false" alt="0">
-                <img class="bit overlay" src="assets/texture/game/bit1.png" style="${animStyle}" draggable="false" alt="1">
+                <img class="bit" src="assets/texture/game/bit0.png" draggable="false" alt="">
+                <img class="bit overlay" src="assets/texture/game/bit1.png" style="${animStyle}" draggable="false" alt="">
             </div>
             `;
         }).join('');
@@ -205,9 +205,9 @@ export class MoonRegister extends HTMLElement {
                 <div class="bg-wrapper">
                     ${setupCardHtml}
                     ${fillHtml}
-                    <img class="bg" src="assets/texture/game/mat-register-${regIndex}.png" draggable="false" alt="Registro ${this.name}">
+                    <img class="bg" src="assets/texture/game/mat-register-${regIndex}.png" draggable="false" alt="">
                     ${borderHtml}
-                    ${this.error ? `<img class="error-overlay" src="assets/texture/game/${this.error}.png" draggable="false" alt="error">` : ''}
+                    ${this.error ? `<img class="error-overlay" src="assets/texture/game/${this.error}.png" draggable="false" alt="">` : ''}
                 </div>
                 <div class="bits">${bitsHtml}</div>
             </div>

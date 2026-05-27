@@ -107,9 +107,9 @@ export class MoonCard extends HTMLElement {
                         transform: translateY(2px) scale(0.95);
                     }
                 </style>
-                <img class="highlight" draggable="false" alt="highlight">
-                <img class="card" src="${imgSrc}" draggable="false" alt="${this.operation}" onerror="this.src='assets/texture/game/mat-op-slot.png'">
-                <img class="error-overlay" draggable="false" alt="error">
+                <img class="highlight" draggable="false" alt="">
+                <img class="card" src="${imgSrc}" draggable="false" alt="" onerror="this.src='assets/texture/game/mat-op-slot.png'">
+                <img class="error-overlay" draggable="false" alt="">
             `;
         }
 
