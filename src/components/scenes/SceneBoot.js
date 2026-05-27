@@ -24,8 +24,7 @@ export class SceneBoot extends HTMLElement {
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    background: url('assets/texture/menu_main/menu_main_background.png') center center;
-                    background-size: cover;
+                    background: url('assets/texture/menu_main/menu_main_background.png') center/100% 100% no-repeat;
                     color: white;
                 }
                 .loader {
@@ -43,20 +42,34 @@ export class SceneBoot extends HTMLElement {
     }
 
     loadAssets() {
-        // Precargar la imagen de fondo y navegar solo cuando esté lista
-        const bgUrl = 'assets/texture/menu_main/menu_main_background.png';
-        const img = new window.Image();
-        img.src = bgUrl;
-        img.onload = () => {
-            // Cuando la imagen esté cargada, navegar al menú
-            this.router.navigate('menu');
+        // Precargar todas las imágenes necesarias antes de navegar
+        const urls = [
+            'assets/texture/menu_main/menu_main_background.png',
+            'assets/texture/menu_main/play_easy.png',
+            'assets/texture/menu_main/play_medium.png',
+            'assets/texture/menu_main/play_hard.png',
+            'assets/texture/menu_main/play_custom.png',
+            'assets/texture/menu_main/about.png'
+        ];
+
+        const loadImage = (url) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+
+                img.onload = () => resolve(url);
+                img.onerror = () => {
+                    console.warn(`Error cargando: ${url}`);
+                    resolve(url); // sigue aunque falle
+                };
+
+                img.src = url;
+            });
         };
-        img.onerror = () => {
-            // Si falla la carga, navegar igual tras breve retardo
-            setTimeout(() => {
+
+        Promise.all(urls.map(loadImage))
+            .then(() => {
                 this.router.navigate('menu');
-            }, 500);
-        };
+            });
     }
 }
 

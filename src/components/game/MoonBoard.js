@@ -88,8 +88,7 @@ export class MoonBoard extends HTMLElement {
                     align-items: center;
                     width: 100%; 
                     height: 100%;
-                    background: url('assets/texture/game/mat-empty.png') center center no-repeat;
-                    background-size: cover;
+                    background: url('assets/texture/game/mat-empty.png') center/100% 100% no-repeat;
                     box-sizing: border-box;
                 }
 

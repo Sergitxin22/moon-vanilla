@@ -21,8 +21,7 @@ export class SceneMenu extends HTMLElement {
                     display: block;
                     width: 100%;
                     height: 100%;
-                    background: url('assets/texture/menu_main/menu_main_background.png') center center;
-                    background-size: cover;
+                    background: url('assets/texture/menu_main/menu_main_background.png') center/100% 100% no-repeat;
                     position: relative;
                 }
                 .menu-container {

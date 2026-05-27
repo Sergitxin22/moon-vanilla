@@ -124,18 +124,47 @@ export class SceneCustom extends HTMLElement {
         }).join('');
     }
 
+    _opsOrderRowHtml() {
+        const isGnu = this.binaryOpsOrder === 'gnu';
+        if (isGnu) {
+            return `
+                <img class="ops-order-item" src="assets/texture/menu_setup/src_selected.png" draggable="false">
+                <img class="ops-order-item" src="assets/texture/menu_setup/right.png" draggable="false">
+                <img class="ops-order-item" src="assets/texture/menu_setup/dest.png" draggable="false">
+            `;
+        }
+        return `
+            <img class="ops-order-item" src="assets/texture/menu_setup/dest.png" draggable="false">
+            <img class="ops-order-item" src="assets/texture/menu_setup/left.png" draggable="false">
+            <img class="ops-order-item" src="assets/texture/menu_setup/src_selected.png" draggable="false">
+        `;
+    }
+
+    _toggleBinaryOpsOrder() {
+        this.binaryOpsOrder = this.binaryOpsOrder === 'gnu' ? 'intel' : 'gnu';
+        const row = this.shadowRoot.getElementById('ops-order-row');
+        if (row) {
+            row.innerHTML = this._opsOrderRowHtml();
+            this._setupOpsOrderRowEvents();
+        }
+    }
+
+    _setupOpsOrderRowEvents() {
+        this.shadowRoot.querySelectorAll('.ops-order-item').forEach(el => {
+            el.addEventListener('pointerdown', () => this._toggleBinaryOpsOrder());
+        });
+    }
+
     // ── Render ───────────────────────────────────────────────────────────────
 
     render() {
         this.shadowRoot.innerHTML = `
             <style>
                 :host {
-                    --sz: min(9vw, 14vh);
-                    --gp: min(1.2vw, 1.8vh);
                     display: block;
                     width: 100%;
                     height: 100%;
-                    background: url('assets/texture/menu_setup/menu_setup_background.png') center/cover no-repeat;
+                    background: url('assets/texture/menu_setup/menu_setup_background.png') center/100% 100% no-repeat;
                     position: relative;
                     overflow: hidden;
                 }
@@ -152,16 +181,19 @@ export class SceneCustom extends HTMLElement {
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    gap: var(--gp);
-                    width: calc(var(--sz) * 1.85);
+                    gap: min(1.2vw, 1.8vh);
+                    width: calc(min(9.375vw, 16.667vh) * 1.85);
                     flex-shrink: 0;
                 }
                 .tab-btn {
-                    width: calc(var(--sz) * 1.3);
-                    height: calc(var(--sz) * 1.3);
+                    width: calc(min(9.375vw, 16.667vh) * 1.3);
+                    height: calc(min(9.375vw, 16.667vh) * 1.3);
+                    max-width: 100%;
+                    max-height: 100%;
                     cursor: pointer;
                     display: block;
-                    object-fit: contain;
+                    object-fit: fill;
+                    flex-shrink: 0;
                     transition: transform 0.1s;
                     touch-action: manipulation;
                     -webkit-user-drag: none;
@@ -177,13 +209,14 @@ export class SceneCustom extends HTMLElement {
                     justify-content: center;
                     position: relative;
                     min-width: 0;
+                    overflow: hidden;
                 }
                 .page {
                     display: none;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    gap: calc(var(--sz) * 0.45);
+                    gap: calc(min(9.375vw, 16.667vh) * 0.45);
                     width: 100%;
                 }
                 .page.active { display: flex; }
@@ -192,21 +225,27 @@ export class SceneCustom extends HTMLElement {
                 .ctrl-row {
                     display: flex;
                     align-items: center;
-                    gap: var(--gp);
+                    gap: min(1.2vw, 1.8vh);
                 }
                 .ctrl-icon {
-                    width: var(--sz);
-                    height: var(--sz);
-                    object-fit: contain;
+                    width: min(9.375vw, 16.667vh);
+                    height: min(9.375vw, 16.667vh);
+                    max-width: 100%;
+                    max-height: 100%;
+                    object-fit: fill;
                     display: block;
+                    flex-shrink: 0;
                     -webkit-user-drag: none;
                 }
                 .ctrl-btn {
-                    width: var(--sz);
-                    height: var(--sz);
-                    object-fit: contain;
+                    width: min(9.375vw, 16.667vh);
+                    height: min(9.375vw, 16.667vh);
+                    max-width: 100%;
+                    max-height: 100%;
+                    object-fit: fill;
                     cursor: pointer;
                     display: block;
+                    flex-shrink: 0;
                     transition: transform 0.1s;
                     -webkit-user-drag: none;
                 }
@@ -216,15 +255,16 @@ export class SceneCustom extends HTMLElement {
                 /* Contenedor de registro con overlay absoluto */
                 .reg-wrap {
                     position: relative;
-                    width: var(--sz);
-                    height: var(--sz);
+                    width: min(9.375vw, 16.667vh);
+                    height: min(9.375vw, 16.667vh);
+                    flex-shrink: 0;
                 }
                 .reg-wrap > img {
                     position: absolute;
                     inset: 0;
                     width: 100%;
                     height: 100%;
-                    object-fit: contain;
+                    object-fit: fill;
                     display: block;
                     -webkit-user-drag: none;
                 }
@@ -236,27 +276,26 @@ export class SceneCustom extends HTMLElement {
                 /* ── Grids ── */
                 .grid {
                     display: grid;
-                    grid-template-columns: repeat(7, var(--sz));
-                    gap: var(--gp);
+                    grid-template-columns: repeat(7, min(9.375vw, 16.667vh));
+                    gap: min(1.2vw, 1.8vh);
                 }
                 .grid-cell {
                     position: relative;
-                    width: var(--sz);
-                    height: var(--sz);
+                    width: min(9.375vw, 16.667vh);
+                    height: min(9.375vw, 16.667vh);
                     cursor: pointer;
+                    overflow: hidden;
+                    transition: transform 0.1s;
                 }
-                .grid-cell:hover .card-bg,
-                .grid-cell:hover .card-img,
-                .grid-cell:hover .card-overlay { transform: scale(1.07); }
+                .grid-cell:hover { transform: scale(1.07); z-index: 1; }
                 .card-bg {
                     position: absolute;
                     inset: 0;
                     width: 100%;
                     height: 100%;
-                    object-fit: contain;
+                    object-fit: fill;
                     display: block;
                     z-index: 0;
-                    transition: transform 0.1s;
                     -webkit-user-drag: none;
                 }
                 .card-img {
@@ -264,10 +303,9 @@ export class SceneCustom extends HTMLElement {
                     inset: 0;
                     width: 100%;
                     height: 100%;
-                    object-fit: contain;
+                    object-fit: fill;
                     display: block;
                     z-index: 2;
-                    transition: transform 0.1s;
                     -webkit-user-drag: none;
                 }
                 .card-overlay {
@@ -275,42 +313,47 @@ export class SceneCustom extends HTMLElement {
                     inset: 0;
                     width: 100%;
                     height: 100%;
-                    object-fit: contain;
+                    object-fit: fill;
                     z-index: 1;
                     opacity: 0;
-                    transition: opacity 0.18s ease, transform 0.1s;
+                    transition: opacity 0.18s ease;
                     pointer-events: none;
                     -webkit-user-drag: none;
                 }
                 .card-overlay.visible { opacity: 1; }
                 .cell-empty {
                     display: block;
-                    width: var(--sz);
-                    height: var(--sz);
-                    object-fit: contain;
+                    width: min(9.375vw, 16.667vh);
+                    height: min(9.375vw, 16.667vh);
+                    object-fit: fill;
+                    flex-shrink: 0;
                     -webkit-user-drag: none;
                 }
 
-                /* ── OPS: toggle orden binario ── */
-                .order-toggle {
+                /* ── OPS: fila de orden de operandos ── */
+                .ops-grid-wrap {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: min(1.2vw, 1.8vh);
+                }
+                .ops-order-row {
                     display: flex;
                     align-items: center;
-                    gap: var(--gp);
-                    font-size: min(1.4vw, 2vh);
-                    color: #d9e7ff;
+                    gap: min(1.2vw, 1.8vh);
                 }
-                .order-btn {
-                    padding: min(0.4vw, 0.6vh) min(1vw, 1.4vh);
-                    border: 2px solid #4a6fa5;
-                    border-radius: 6px;
-                    background: #10182a;
-                    color: white;
+                .ops-order-item {
+                    width: min(9.375vw, 16.667vh);
+                    height: min(9.375vw, 16.667vh);
                     cursor: pointer;
-                    font-size: inherit;
-                    transition: background 0.15s, border-color 0.15s;
+                    display: block;
+                    object-fit: contain;
+                    flex-shrink: 0;
+                    transition: transform 0.1s;
+                    -webkit-user-drag: none;
                 }
-                .order-btn.active { background: #2563eb; border-color: #60a5fa; }
-                .order-btn:hover:not(.active) { background: #1e3a6e; }
+                .ops-order-item:hover  { transform: scale(1.07); }
+                .ops-order-item:active { transform: scale(0.95); }
 
                 /* ── Botones de navegación ── */
                 .nav-buttons {
@@ -318,14 +361,17 @@ export class SceneCustom extends HTMLElement {
                     bottom: min(2.5vw, 3.8vh);
                     right: min(2.5vw, 3.8vh);
                     display: flex;
-                    gap: var(--gp);
+                    gap: min(1.2vw, 1.8vh);
                 }
                 .nav-btn {
-                    width: calc(var(--sz) * 1.35);
-                    height: calc(var(--sz) * 1.35);
+                    width: calc(min(9.375vw, 16.667vh) * 1.35);
+                    height: calc(min(9.375vw, 16.667vh) * 1.35);
+                    max-width: 100%;
+                    max-height: 100%;
                     cursor: pointer;
                     display: block;
-                    object-fit: contain;
+                    object-fit: fill;
+                    flex-shrink: 0;
                     transition: transform 0.1s, opacity 0.1s;
                     -webkit-user-drag: none;
                 }
@@ -373,13 +419,13 @@ export class SceneCustom extends HTMLElement {
 
                     <!-- ── OPS ── -->
                     <div class="page" id="page-ops">
-                        <div class="order-toggle">
-                            <span>Operand order:</span>
-                            <button class="order-btn active" id="btn-gnu">GNU (src → dst)</button>
-                            <button class="order-btn"        id="btn-intel">Intel (dst ← src)</button>
-                        </div>
-                        <div class="grid" id="ops-grid">
-                            ${this._opsHtml()}
+                        <div class="ops-grid-wrap">
+                            <div class="grid" id="ops-grid">
+                                ${this._opsHtml()}
+                            </div>
+                            <div class="ops-order-row" id="ops-order-row">
+                                ${this._opsOrderRowHtml()}
+                            </div>
                         </div>
                     </div>
 
@@ -451,17 +497,8 @@ export class SceneCustom extends HTMLElement {
             });
         });
 
-        // Toggle orden binario
-        sr.getElementById('btn-gnu').addEventListener('pointerdown', () => {
-            this.binaryOpsOrder = 'gnu';
-            sr.getElementById('btn-gnu').classList.add('active');
-            sr.getElementById('btn-intel').classList.remove('active');
-        });
-        sr.getElementById('btn-intel').addEventListener('pointerdown', () => {
-            this.binaryOpsOrder = 'intel';
-            sr.getElementById('btn-intel').classList.add('active');
-            sr.getElementById('btn-gnu').classList.remove('active');
-        });
+        // Orden de operandos
+        this._setupOpsOrderRowEvents();
 
         // Navegación
         sr.getElementById('back-btn').addEventListener('pointerdown', () => {
