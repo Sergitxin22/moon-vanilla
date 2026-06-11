@@ -1,6 +1,7 @@
 import { GameModel } from '../model/GameModel.js';
 import { OperationEngine } from '../model/OperationEngine.js';
 import { gameEvents } from './EventEmitter.js';
+import { GameState, DEFAULT_OPS } from '../model/Constants.js';
 
 export class AppController {
     constructor(sceneGameContext, boardComponent, difficulty, customConfig) {
@@ -16,7 +17,7 @@ export class AppController {
         // Configurar las operaciones disponibles (default o las seleccionadas en modo CUSTOM)
         const availableOps = (difficulty === 'CUSTOM' && customConfig?.selectedOpKeys?.length)
             ? customConfig.selectedOpKeys.slice(0, 10)
-            : ['INC', 'DEC', 'ROL', 'ROR', 'MOV', 'NOT', 'OR', 'AND', 'XOR'];
+            : DEFAULT_OPS;
         this.board.setAvailableOps(availableOps);
 
         // Suscribirse a eventos de UI (Cartas y registros cliceados)
@@ -27,7 +28,7 @@ export class AppController {
     }
 
     async playStartupSequence() {
-        this.model.setState('ANIMATING');
+        this.model.setState(GameState.ANIMATING);
 
         // Reset visual inicial (todos registros a 0, sin carta objetivo, sin highlights)
         this.board.updateRegisters({ A: 0, B: 0, C: 0, D: 0 });
@@ -47,17 +48,28 @@ export class AppController {
         this.board.updateSlots(this.model.drawnCards, this.model);
         await new Promise(resolve => setTimeout(resolve, 700));
 
+        // Activar objetivo o resolver evento inicial antes de habilitar interacción
+        // Si ya existe un objetivo activo inicial, no volvemos a avanzar ni disparar NEW_OBJECTIVE.
+        if (!this.model.currentObjective) {
+            this.model.setNextObjective();
+            if (this.model.isEventResolving()) {
+                await new Promise(resolve => {
+                    this._waitForEventResolved = () => {
+                        gameEvents.off('EVENT_RESOLVED', this._waitForEventResolved);
+                        resolve();
+                    };
+                    gameEvents.on('EVENT_RESOLVED', this._waitForEventResolved);
+                });
+            }
+        }
+
         // Fade-in de los highlights de operaciones disponibles
-        this.model.setState('SELECT_OPERATION');
+        this.model.setState(GameState.SELECT_OPERATION);
         this.board.animateOperationHighlights(this.model);
 
         // Pequeña espera para que termine el fade-in antes de habilitar interacción
         await new Promise(resolve => setTimeout(resolve, 550));
         this.syncBoard();
-
-        // Activar el primer objetivo o resolver el primer evento
-        // (equivalente a animateOperationHighlights → setNextObjective en Phaser)
-        this.model.setNextObjective();
     }
 
     setupEventListeners() {
@@ -86,7 +98,7 @@ export class AppController {
             this.destroy();
         };
         this.onDeckClicked = () => {
-            if (this.model.state === 'ANIMATING' || this.model.state === 'GAME_OVER') return;
+            if (this.isInteractionBlocked()) return;
             if (this.model.pendingRepairCard) return;
             const stolen = this.model.stealCard();
             if (stolen) {
@@ -113,10 +125,10 @@ export class AppController {
                 const idx = this.model.drawnCards.findIndex(c => c === completedObjective);
                 if (idx !== -1) this.model.drawnCards.splice(idx, 1);
                 this.model.currentObjective = null;
-                this.model.setState('COMPLETED_OBJECTIVE');
+                this.model.setState(GameState.COMPLETED_OBJECTIVE);
                 this.model.setNextObjective();
                 // Si el juego terminó (GAME_OVER), no actualizar el board
-                if (this.model.state === 'GAME_OVER') return;
+                if (this.model.state === GameState.GAME_OVER) return;
                 // Si el siguiente era un evento (no se emitió NEW_OBJECTIVE), forzar actualización de slots
                 if (!this.model.currentObjective) {
                     this.board.updateSlots(this.model.drawnCards, this.model);
@@ -141,6 +153,10 @@ export class AppController {
     }
 
     destroy() {
+        if (this._waitForEventResolved) {
+            gameEvents.off('EVENT_RESOLVED', this._waitForEventResolved);
+        }
+        this.model.clearPendingEventTimers();
         // Importante remover listeners al salir de la partida
         gameEvents.off('OPERATION_CLICKED', this.onOperationClicked);
         gameEvents.off('REGISTER_CLICKED', this.onRegisterClicked);
@@ -156,6 +172,12 @@ export class AppController {
         gameEvents.off('BUG_SLOT_CLICKED', this.onBugSlotClicked);
         gameEvents.off('PENDING_REPAIR', this.onPendingRepair);
         gameEvents.off('OBJECTIVE_COMPLETED', this.onObjectiveCompleted);
+    }
+
+    isInteractionBlocked() {
+        return this.model.state === GameState.GAME_OVER
+            || this.model.state === GameState.ANIMATING
+            || this.model.isEventResolving();
     }
 
     syncBoard() {
@@ -192,8 +214,7 @@ export class AppController {
     }
 
     handleOperationSelected(opName) {
-        // En base a la lógica original de MoonGame
-        if (this.model.state === 'GAME_OVER' || this.model.state === 'ANIMATING') return;
+        if (this.isInteractionBlocked()) return;
 
         console.log(`Clic en operación: ${opName}`);
 
@@ -211,7 +232,7 @@ export class AppController {
         if (this.model.selectedOperation === opName) {
             console.log('Operación deseleccionada');
             this.model.selectedOperation = null;
-            this.model.setState('SELECT_OPERATION');
+            this.model.setState(GameState.SELECT_OPERATION);
         } else {
             this.model.selectedOperation = opName;
             this.model.selectedRegisters = [];
@@ -219,15 +240,15 @@ export class AppController {
             const isUnary = ['INC', 'DEC', 'ROL', 'ROR', 'NOT'].includes(opName);
             if (isUnary) {
                 console.log('Operación unaria seleccionada. Selecciona un registro destino.');
-                this.model.setState('SELECT_REGISTER_LAST');
+                this.model.setState(GameState.SELECT_REGISTER_LAST);
             } else {
-                const isIntel = !this.model.customConfig || this.model.customConfig.binaryOpsOrder !== 'gnu';
+                const isIntel = this.model.isIntelBinaryOrder();
                 if (isIntel) {
                     console.log('Operación binaria seleccionada. Orden Intel: selecciona el registro destino primero.');
                 } else {
                     console.log('Operación binaria seleccionada. Orden GNU: selecciona el registro origen primero.');
                 }
-                this.model.setState('SELECT_REGISTER_INITIAL');
+                this.model.setState(GameState.SELECT_REGISTER_INITIAL);
             }
         }
 
@@ -235,7 +256,7 @@ export class AppController {
     }
 
     handleRegisterSelected(regName) {
-        if (this.model.state === 'GAME_OVER' || this.model.state === 'ANIMATING') return;
+        if (this.isInteractionBlocked()) return;
 
         console.log(`Clic en registro: ${regName}`);
 
@@ -251,21 +272,21 @@ export class AppController {
         if (!this.model.selectedOperation) return;
 
         const isUnary = ['INC', 'DEC', 'ROL', 'ROR', 'NOT'].includes(this.model.selectedOperation);
-        const isIntel = this.model.customConfig?.binaryOpsOrder === 'intel';
+        const isIntel = this.model.isIntelBinaryOrder();
 
-        if (this.model.state === 'SELECT_REGISTER_INITIAL') {
+        if (this.model.state === GameState.SELECT_REGISTER_INITIAL) {
             this.model.selectedRegisters.push(regName);
             if (isIntel) {
                 console.log(`Registro destino seleccionado primero (Intel): ${regName}`);
             } else {
                 console.log(`Registro origen seleccionado primero (GNU): ${regName}`);
             }
-            this.model.setState('SELECT_REGISTER_LAST');
+            this.model.setState(GameState.SELECT_REGISTER_LAST);
             this.syncBoard();
             return;
         }
 
-        if (this.model.state === 'SELECT_REGISTER_LAST') {
+        if (this.model.state === GameState.SELECT_REGISTER_LAST) {
             this.model.selectedRegisters.push(regName);
 
             // Intel: primer click = destino, segundo = origen
@@ -303,7 +324,7 @@ export class AppController {
             const cost = this.model.getEnergyCost(op);
 
             // Bloquear interacción durante animación (antes de emitir ENERGY_UPDATED)
-            this.model.setState('ANIMATING');
+            this.model.setState(GameState.ANIMATING);
             this.model.registers[targetReg] = newVal;
             this.model.updateEnergy(cost); // ENERGY_UPDATED bloqueado por ANIMATING guard
             this.model.selectedOperation = null;
@@ -311,7 +332,7 @@ export class AppController {
 
             // Animar bits del registro destino con la misma animación del inicio
             this.board.animateRegisterUpdate(targetReg, newVal).then(() => {
-                this.model.setState('SELECT_OPERATION');
+                this.model.setState(GameState.SELECT_OPERATION);
                 this.syncBoard();
                 setTimeout(() => this.model.checkWinCondition(), 50);
             });

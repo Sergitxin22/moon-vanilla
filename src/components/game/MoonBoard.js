@@ -1,6 +1,7 @@
 import './MoonRegister.js';
 import './MoonCard.js';
 import { gameEvents } from '../../core/EventEmitter.js';
+import { GameState } from '../../model/Constants.js';
 
 export class MoonBoard extends HTMLElement {
     constructor() {
@@ -305,8 +306,8 @@ export class MoonBoard extends HTMLElement {
         this.energy = energyValue;
 
         // Overlay blanco (color-white-selected) en slot 5 + cursor cuando se puede robar
-        const maxEnergy = Math.ceil(parseFloat(this.getAttribute('max-energy') || '4'));
-        const canSteal = energyValue < maxEnergy;
+        const maxEnergyExact = parseFloat(this.getAttribute('max-energy') || '4');
+        const canSteal = energyValue < maxEnergyExact;
         const deckSlotEl = this.shadowRoot.querySelector('.deck-slot');
         if (deckSlotEl) deckSlotEl.classList.toggle('can-steal', canSteal);
         const overlayEl = this.shadowRoot.querySelector('.slot5-overlay');
@@ -316,6 +317,7 @@ export class MoonBoard extends HTMLElement {
         if (!container) return;
 
         let energyLeft = this.energy;
+        const maxEnergy = Math.ceil(maxEnergyExact);
         const batteries = [];
         for (let i = 0; i < maxEnergy; i++) {
             const threshold = maxEnergy - 1 - i;
@@ -368,7 +370,7 @@ export class MoonBoard extends HTMLElement {
     }
 
     updateOperationHighlights(model) {
-        if (model.state === 'ANIMATING') return;
+        if (model.state === GameState.ANIMATING || model.isEventResolving?.()) return;
         const hasSelectedOp = !!model.selectedOperation;
         const cards = this.shadowRoot.querySelectorAll('moon-card');
         const ERROR_OP_TEXTURES = { ROL: 'evento-error_rol', XOR: 'evento-error_xor', NOT: 'evento-error_not' };

@@ -1,4 +1,4 @@
-import { GameState, ENERGY_MAP, OP_COSTS, INITIAL_REGISTERS_MAP, EVENT_CONFIG, EVENT_TYPES } from './Constants.js';
+import { GameState, ENERGY_MAP, OP_COSTS, INITIAL_REGISTERS_MAP, EVENT_CONFIG, EVENT_TYPES, DEFAULT_BINARY_OPS_ORDER } from './Constants.js';
 import { gameEvents } from '../core/EventEmitter.js';
 
 function shuffle(array) {
@@ -32,8 +32,28 @@ export class GameModel {
         this.selectedOperation = null;
         this.selectedRegisters = [];
         this._bugIdCounter = 0;
+        this._eventTimers = [];
+        this._isResolvingEvent = false;
 
         this.initGame();
+    }
+
+    getBinaryOpsOrder() {
+        return this.customConfig?.binaryOpsOrder ?? DEFAULT_BINARY_OPS_ORDER;
+    }
+
+    isIntelBinaryOrder() {
+        return this.getBinaryOpsOrder() === 'intel';
+    }
+
+    isEventResolving() {
+        return this._isResolvingEvent;
+    }
+
+    clearPendingEventTimers() {
+        this._eventTimers.forEach(id => clearTimeout(id));
+        this._eventTimers = [];
+        this._isResolvingEvent = false;
     }
 
     setState(newState) {
@@ -214,7 +234,8 @@ export class GameModel {
             RESET_BIT_3: 8,
         };
 
-        setTimeout(() => {
+        this._isResolvingEvent = true;
+        const timerId = setTimeout(() => {
             switch (card.eventType) {
                 case EVENT_TYPES.BUG: {
                     // Bloqueamos un slot usando un ID numérico único (el índice cambia tras el shift)
@@ -300,7 +321,10 @@ export class GameModel {
                 regs: [...this.disabledRegisters]
             });
             this.checkGameEndConditions();
+            this._isResolvingEvent = false;
+            gameEvents.emit('EVENT_RESOLVED');
         }, RESOLVE_DELAY);
+        this._eventTimers.push(timerId);
     }
 
     buildObjectiveDeck() {

@@ -8,9 +8,14 @@ export const GameState = {
     APPLY_OPERATION: 'APPLY_OPERATION',
     CHECK_OBJECTIVE: 'CHECK_OBJECTIVE',
     COMPLETED_OBJECTIVE: 'COMPLETED_OBJECTIVE',
+    ANIMATING: 'ANIMATING',
     ANIMATION_LOOP: 'ANIMATION_LOOP',
     GAME_OVER: 'GAME_OVER'
 };
+
+export const DEFAULT_BINARY_OPS_ORDER = 'gnu';
+
+export const DEFAULT_OPS = ['INC', 'DEC', 'ROL', 'ROR', 'MOV', 'NOT', 'OR', 'AND', 'XOR'];
 
 export const ENERGY_MAP = {
     EASY: 3,
